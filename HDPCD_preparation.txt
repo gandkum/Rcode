@@ -1,0 +1,1172 @@
+start-all.sh
+jsp
+hadoop fs -ls /user/hduser
+
+hadoop fs -rm -r /user/hduser/customer	
+hadoop fs -rm -r /user/hduser/incriimpoert2
+
+hadoop fs -rm -r /user/hduser/savedjob1
+hadoop fs -rm -r /user/hduser/savedjob
+hadoop fs -rm -r /user/hduser/freeform
+
+sqoop job --delete kum_job
+sqoop job --delete myjob1
+
+//hadoop
+start-all.sh
+
+//mysql
+sudo su mysql
+service mysqld start
+//password hduser
+mysql
+
+//pig
+cd /usr/local/pig
+mr-jobhistory-daemon.sh start historyserver
+
+
+
+use test;
+CREATE TABLE customer (custid INT,firstname VARCHAR(20),lastname VARCHAR(20),city varchar(50),age
+int,createdt date,transactamt int );
+insert into customer values(1,'Arun','Kumar','chennai',33,'2015 -09-20',100000);
+insert into customer values(2,'srini','vasan','chenna i',33,'2015-09-21',10000);
+insert into customer values(3,'vasu','devan','banglore',39,'2015 -09-23',90000);
+insert into customer values(4,'mohamed','imran','hyderabad',33,'2015 -09-24',1000);
+insert into customer values(5,'arun','basker','chennai',23,'2015 -09-20',200000);
+insert into customer values(6,'ramesh','babu','manglore',39,'2015 -09-21',100000);
+insert into customer values(10,'gkumar','gandipan',null,23,'2015 -09-20',200000);
+
+
+
+CREATE TABLE cust_order (custid INT );
+drop table cust_order;
+
+CREATE TABLE orders (custid INT, address1 VARCHAR(20),address2 VARCHAR(20),city varchar(50),ageoforders int,createdt date,ordersamount int);
+insert into orders values(1,'Arun address','Kumar address','chennai',33,'2015 -09-20',100000);
+insert into orders values(2,'srini address','vasan address','chenna i',33,'2015-09-21',10000);
+insert into orders values(3,'vasu address','devan address','banglore',39,'2015 -09-23',90000);
+insert into orders values(4,'mohamed address','imran address','hyderabad',33,'2015 -09-24',1000);
+insert into orders values(5,'arun address','basker address','chennai',23,'2015 -09-20',200000);
+insert into orders values(6,'ramesh address','babu address','manglore',39,'2015 -09-21',100000);
+
+
+insert into orders values(1,'Arun address','Kumar address','chennai',3,'2017 -09-1',100000);
+insert into orders values(2,'srini address','vasan address','chenna i',2,'2017 -09-2',10000);
+insert into orders values(3,'vasu address','devan address','banglore',9,'2017 -09-3',90000);
+insert into orders values(4,'mohamed address','imran address','hyderabad',3,'2017 -09-4',1000);
+insert into orders values(5,'arun address','basker address','chennai',2,'2017 -09-2',200000);
+insert into orders values(6,'ramesh address','babu address','manglore',8,'2017 -09-3',100000);
+insert into orders values(5,'arun address','basker address','chennai',2,'2017 -09-2',20);
+insert into orders values(6,'ramesh address','babu address','manglore',8,'2017 -09-3',10);
+insert into orders values(10,'gkumar address','gandipan address', null,2,'2017 -09-2',20);
+insert into orders values(11,'gbharathi address','gandipan address', null ,8,'2017 -09-3',10);
+ 
+select a.custid,a.firstname,b.address1 from customer a, orders b where a.custid = b.custid;
+
+select a.custid,a.firstname,b.address1 from customer a join orders b on a.custid = b.custid;
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--query 'select a.custid,a.firstname, b.ordersamount,b.city from customer a join orders b on a.custid=b.custid where $CONDITIONS' \
+--split-by b.city \
+--target-dir /user/hduser/sqoop_import/ex1 ;
+--null-string '\N' --enclosed-by \" --fields-terminated-by ',' --lines-terminated-by ':';
+
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table orders \
+--split-by custid \
+--target-dir /user/hduser/sqoop_import/ex7\
+--null-string 'kum_null' \
+--fields-terminated-by ',';
+
+ --lines-terminated-by ':'
+--enclosed-by \"
+
+
+
+
+
+
+
+
+
+
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--query 'select a.custid,a.firstname,b.address1 from customer a join orders b on a.custid = b.custid where $CONDITIONS' \
+--split-by a.custid \
+--m 3 \
+--target-dir '/user/hduser/freeform';
+
+hadoop fs -ls /user/hduser/freeform
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--query 'select a.custid,a.firstname,b.address1 from customer a join orders b on a.custid = b.custid where $CONDITIONS' \
+--split-by a.custid \
+--m 5 \
+--target-dir '/user/hduser/freeform';
+
+
+echo 'export FLUME_CLASSPATH=/usr/local/flume/lib/flume-sources-1.0-SNAPSHOT.jar' >> /usr/local/flume/conf/flume-env.sh
+
+hadoop fs -mkdir -p /tmp
+hadoop fs -chmod g+w /tmp
+hadoop fs -chmod g+w /tmp
+
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root --table customer --m 1 ;
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root --table customer --m 1;
+
+
+// connec to mysql server
+mysql -h localhost -u root -p root
+
+//from the linux prompt to check list of db
+sqoop list-databases --connect jdbc:mysql://localhost --username root --password root;
+
+//from the linux prompt to check list of tables
+sqoop list-tables --connect jdbc:mysql://localhost/test --username root --password root;
+
+//final understanding 1
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 4 --split-by custid \
+--where "city='chennai'" \
+--target-dir kumar_import;
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 1 \
+--incremental append --check-column custid --last-value 6 \
+--target-dir incriimpoert2;
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 4 --split-by custid \
+--where "city='chennai'" \
+--incremental append --check-column custid --last-value 3 \
+--target-dir funny_cracked;
+
+
+hadoop fs -rm -r /user/hduser/savedjob1
+hadoop fs -rm -r /user/hduser/savedjob
+sqoop job --delete kum_job
+sqoop job --delete myjob1
+
+
+sqoop job --create kum_job \
+-- import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 4 --split-by custid \
+--where "city='chennai'" \
+--incremental append --check-column custid --last-value 3 \
+--target-dir FunnCrackedSavejob;
+
+sqoop job --exec kum_job
+
+sqoop job --create myjob1 \
+-- import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 1 \
+--target-dir savedjob1;
+
+sqoop job --exec myjob1
+password:root
+sqoop job --delete myjob1
+
+sqoop import --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer --m 1 \
+--lines-terminated-by '\n' --fields-terminated-by '~' --target-dir kumardir1;
+
+hadoop fs -cat /user/hduser/kumardir1/part-m-00000
+
+sqoop export --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer1 --export-dir kumardir1 --fields-terminated-by '~' --lines-terminated-by '\n';
+
+hadoop fs -copyToLocal  /user/hduser/kumardir1
+
+8~md~irfan1~Calcutta~33~2015-09-28~10000
+9~a~srini~chennai~38~2016-08-08~13000
+
+hadoop fs -moveFromLocal  /home/hduser/kumardir1
+
+sqoop export --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer1 --export-dir kumardir1 --fields-terminated-by '~' --lines-terminated-by '\n' \
+--update-key custid --update-mode updateonly;
+
+sqoop export --connect jdbc:mysql://localhost/test --username root --password root --table customer1 –exportdir imp_del \
+--fields-terminated-by '~' --lines-terminated-by '\n' --update-key custid --update-mode updateonly;
+
+
+
+
+
+
+
+
+sqoop job --create myjob1 --import --connect jdbc:mysql://localhost/test --username root --password root --table customer --target-dir savedjob -m 1;
+sqoop job --create myjob1 -- import --connect jdbc:mysql://localhost/test --username root --password root --table customer --target-dir savedjob -m 1;
+
+
+//from the linux prompt to import table with one mapper
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 1 ;
+hadoop fs -rm -r /user/hduser/customer	
+
+//from the linux prompt to import table with one mapper with direct import
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 1 --direct;
+hadoop fs -rm -r /user/hduser/customer
+
+//from the linux prompt to import table with one mapper to /user/hduser/sqoop_import directory
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 1 --target-dir sqoop_import;
+
+//Check whether the below import works?
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 2;
+//error - No primary key could be found for table customer. Please specify one with --split-by or perform a sequential import with '-m 1'.
+
+//Import with –split-by option
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 10 --split-by custid;
+hadoop fs -rm -r /user/hduser/customer
+// u will have 6 splits because custid as 6 unique values
+
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 3 --split-by city;
+// u will have only 3 splits because custid as 6 unique values
+
+//Using Where condition:
+hadoop fs -rm -r /user/hduser/customer
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root --table customer -m 1 --where "city ='chennai'" --target-dir filtered
+
+//Incremental import:
+//insert into mysql
+insert into customer values(7,'md','irfan1','hyderabad',33,'2015 -09-28',10000);
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 1 --target-dir incrimport --incremental append --check-column custid --last-value 6
+
+//see if this works
+sqoop import --connect jdbc:mysql://localhost/test --username root --password root -table customer -m 1 --target-dir incrimport1 --incremental append --check-column city --last-value 'pune'
+
+//Working with Saved Jobs:
+sqoop job --create myjob1 -- import --connect jdbc:mysql://localhost/test --username root --password root --table customer --target-dir savedjob -m 1
+
+sqoop job --exec myjob1
+password: root
+
+//incremental saved jobs
+sqoop job \
+--create myjob2 -- import --connect jdbc:mysql://localhost/test --username root --password root --table customer --target-dir savedjob1 --m 1 \
+--incremental append --check-column custid --last-value 0
+
+
+Export from HDFS to SQL: ( Create table in MYSQL before running this commmand)
+CREATE TABLE customer1 (custid INT,firstname VARCHAR(20),lastname VARCHAR(20),city varchar(50),age
+int,createdt date,transactamt int );
+
+
+sqoop export --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer1 \
+--export-dir savedjob1;
+
+sqoop import --connect jdbc:mysql://localhost/test 
+--username root --password root 
+-- table customer -m 1 
+--target-dir imp_del 
+--fields-terminated-by '~' 
+--lines-terminated-by '\n';
+
+
+sqoop export --connect jdbc:mysql://localhost/test \
+--username root --password root \
+--table customer1 \
+--export-dir imp_del \
+--fields-terminated-by '~' \
+--lines-terminated-by '\n';
+
+
+
+
+######################################Hive################################################
+##########################################################################################
+
+hadoop fs -ls /user/hive/warehouse
+
+
+create database retail;
+use retail;
+set hive.cli.print.current.db = true;
+
+
+Example 1:
+
+//Managed table
+hadoop fs -cat /home/hduser/hive/data/txns
+//field is comma delimited
+
+create table txnrecords (txnno INT,txndate STRING,custno INT, amount DOUBLE, category STRING,
+product STRING, city STRING, state STRING,spendby STRING)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+stored as textfile;
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' INTO TABLE txn3_managedtable;
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' INTO TABLE txn3_managedtable;
+
+select * from txn3_managedtable;
+show create table txn3_managedtable;
+
+hadoop fs -ls /user/hive/warehouse/retail.db/txn3_managedtable
+
+hadoop fs -cat /user/hive/warehouse/retail.db/txn3_managedtable/txns
+//field is comma delimiter
+
+drop table txn3_managedtable;
+
+hadoop fs -ls /user/hive/warehouse/retail.db/txn3_managedtable
+//no such direcotry or file.
+
+Example 2:
+
+//External table 
+
+create external table txn4_external ( txnno INT,txndate string, custno int, amount double, category string, product string, city string, state string, spendby string)
+row format delimited
+fields terminated by '|'
+lines terminated by '\n'
+stored as textfile
+location '/user/hduser/hive/txn4_external';
+//table created by creating directories , dropped and created table without dropping directories it again works
+
+hadoop fs -ls /user/hduser/hive/txn4_external
+//returns empty
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' INTO TABLE txn4_external;
+
+select * from txn4_externals;
+//loaded with only null values for all column
+
+hadoop fs -cat /user/hduser/hive/txn4_external/*
+//file is loaded properly with comma dilimitation
+
+// create another table with comma delimitation for fields without changing the external location path
+
+create external table txn5_external ( txnno INT,txndate string, custno int, amount double, category string, product string, city string, state string, spendby string)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+stored as textfile
+location '/user/hduser/hive/txn4_external';
+
+select * from txn4_externals;
+//displays results properly
+
+
+Example 3:
+
+//managed table static partition
+
+drop table txn6_static_partition;
+create table txn6_static_partition ( txnno INT,txndate string, custno int, amount double, product string, city string, spendby string)
+partitioned by (state string,category string)
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+//before you could load the data you need to remove the state and category column from data set it is achived through pig has given blow likewise for dynamic partition moved state and category column to last.
+
+fs -cat /user/hduser/pigdata/txns
+
+txndata = LOAD '/user/hduser/pigdata/txns' USING PigStorage(',')  AS ( txnno:INT,txndate:chararray, custno:int, amount:double, category:chararray, product:chararray, city:chararray, state:chararray, spendby:chararray);
+
+txnsubset1 = FOREACH txndata GENERATE txnno,txndate,custno,amount,product,city,spendby,state,category;
+
+txnsubset2 = FOREACH txndata GENERATE txnno,txndate,custno,amount,product,city,spendby;
+
+STORE txnsubset1 INTO '/home/hduser/hive/data/txn_dynamic' USING PigStorage(',');
+
+STORE txnsubset2 INTO '/home/hduser/hive/data/txn_static' USING PigStorage(',');
+
+fs -cat /home/hduser/hive/data/txn_static/*
+fs -cat /home/hduser/hive/data/txn_dynamic/*
+
+// Load the data into static partition
+
+LOAD DATA INPATH '/home/hduser/hive/data/txn_static/*' INTO TABLE txn6_static_partition partition (state ='Albama',category='Gymnastics');
+INSERT OVERWRITE TABLE txn6_static_partition PARTITION(state ='Albama',category='Gymnastics') select txnno,txndate,custno,amount,product,city,spendby from txn1;
+
+Note : we have loaded into the same table with static definition only the load methods differ.
+
+
+Example 4:
+//dynamic partition
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+set hive.exec.dynamic.partition=true;
+
+LOAD DATA INPATH '/home/hduser/hive/data/txn_dynamic/*' INTO TABLE txn6_static_partition partition (state,category); // not working need to validate
+INSERT OVERWRITE TABLE txn6_static_partition PARTITION(state,category) select txnno,txndate,custno,amount,product,city,spendby,state,category from txn1;
+
+set map.reduce.tasks = 10;
+set hive.enforce.bucketing = true;
+
+
+Example 5:
+// Bucketing
+
+create table txn6_static_partition ( txnno INT,txndate string, custno int, amount double, product string, city string, spendby string)
+partitioned by (state string,category string)
+clustered by (city) INTO 6 buckets
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+INSERT OVERWRITE TABLE txn6_static_partition PARTITION(state,category) select txnno,txndate,custno,amount,product,city,spendby,state,category from txn1;
+//unable to see the bucket not sure how to trace it..
+
+create table txn7_bucket ( txnno INT,txndate string, custno int, amount double, product string, city string, spendby string,state string,category string)
+clustered by (city) INTO 6 buckets
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+INSERT OVERWRITE TABLE txn7_bucket select txnno,txndate,custno,amount,product,city,spendby,state,category from txn1;
+//even here bucketing didn't not work.
+
+Example 6:
+
+set map.reduce.tasks = 5;
+set hive.enforce.bucketing = true ;
+
+create table buckettxnrecsByCat(txnno INT, txndate STRING, custno INT,
+amount DOUBLE, product STRING, city STRING, state STRING, spendby STRING)
+partitioned by (category STRING)
+clustered by (state) INTO 5 buckets
+row format delimited
+fields terminated by ',';
+stored as textfile 
+location '/user/hduser/hiveexternaldata/bucketout';
+
+Insert into table buckettxnrecsByCat partition (category) select
+txnno,txndate,custno,amount,product,city,state,spendby,category from txn1;
+
+
+SELECT txnno,product,state FROM buckettxnrecsByCat TABLESAMPLE(BUCKET 3 OUT OF 10);
+SELECT txnno,product,state FROM buckettxnrecsByCat TABLESAMPLE(0.1percent);
+SELECT * FROM buckettxnrecsByCat TABLESAMPLE(1M) ;
+select count(1),category from buckettxnrecsByCat group by category;
+
+Export hive data to a file:
+
+insert overwrite local directory '/home/hduser/exptxnrecords' row format delimited fields
+terminated by ',' select txnno,txndate,custno,amount, product,city,state,spendby from
+txnrecords where category='Games';
+
+
+
+----------------------------------------------------------
+
+
+
+
+//managed table
+create table txnrecords (txnno INT,txndate STRING,custno INT, amount DOUBLE, category STRING,
+product STRING, city STRING, state STRING,spendby STRING)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+stored as textfile;
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' INTO TABLE txnrecords;
+
+//check the file in warehouse
+hadoop fs -cat /user/hive/warehouse/retail.db/txnrecords/txns
+
+
+select count(1) from txnrecords;
+select * from txnrecords where category = 'Puzzles';
+select * from txnrecords limit 10;
+select * from txnrecords order by 1 limit 10;
+
+hadoop fs -ls /user/hduser
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' OVERWRITE INTO TABLE txnrecords;
+
+//external table
+create EXTERNAL table txnrecords_ext (txnno INT,txndate STRING,custno INT, amount DOUBLE, category STRING,
+product STRING, city STRING, state STRING,spendby STRING)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+stored as textfile
+location '/user/hduser/hiveexternaldata';
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' into table txnrecords_ext;
+
+describe formatted txnrecords;
+describe formatted txnrecords_ext;
+
+create index idx_custno on table txnrecords(custno) as 
+'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler' with deferred rebuild;
+
+
+
+//complex structure array
+create table table_array (id int, name string, sal bigint, desig array<string>, city string)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+collection items terminated by '$';
+
+create table array(id int,name string,sal bigint,desig array<string>,city string) row format
+delimited
+fields terminated by ','
+collection items terminated by '$';
+
+
+drop table array;
+drop table table_array;
+
+//complex structure array
+create table table_array (id int, name string, sal bigint, desig array<string>,city string)
+row format delimited
+fields terminated by ','
+collection items terminated by '$';
+
+note : lines terminated by '\n' is not working
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/arraydata' into table table_array;
+
+select * from table_array;
+select id,name,desig[1] from table_array;
+
+
+//partitioned table
+cat /home/hduser/hive/data/txns
+
+create table txnrecsbycatdtreg (txnno INT, txndate STRING, custno INT, amount DOUBLE,
+category STRING,product STRING, city STRING, state STRING, spendby STRING)
+partitioned by(datadt date,region string) 
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' OVERWRITE INTO TABLE txnrecsbycatdtreg PARTITION (datadt='2016-12-12',region="PADE");
+
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg/datadt=2016-12-12
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg/datadt=2016-12-12/region=PADE
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' OVERWRITE INTO TABLE txnrecsbycatdtreg PARTITION (datadt='2017-12-12',region="PADE");
+
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg/datadt=2017-12-12
+[hduser@Inceptez data]$ hadoop fs -ls /user/hive/warehouse/retail.db/txnrecsbycatdtreg/datadt=2017-12-12/region=PADE
+
+//Bucketing
+
+set hive.enforce.bucketing = true ;
+
+create table buckettxnrecsByCat(txnno INT, txndate STRING, custno INT,
+amount DOUBLE, product STRING, city STRING, state STRING, spendby STRING)
+partitioned by (category STRING)
+clustered by (state) INTO 10 buckets
+row format delimited
+fields terminated by ','
+stored as textfile location '/user/hduser/hiveexternaldata/bucketout';
+
+
+
+
+######################################PIG#################################################
+##########################################################################################
+
+hadoop fs -mkdir /user/hduser/pigdata
+hadoop fs -mkdir /user/hduser/pigdata/output
+
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/tuple.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/weblogs_parse.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/student /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/results /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/data1 /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/data2 /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/j2 /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/j1 /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/student_edureka /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/studentRoll /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/weatherPIG /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/excite-small.log /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/weatherPIG.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/weatherPIG_edureka.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/custs_edureka /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/custs /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/txns /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/sample.log /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/coursedetails.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/testdata.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/hbdata /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/map.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/EMP_DATA.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/SchoolsPlayers.csv /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/Schools.csv /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/Salaries.csv /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/tweets.csv /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/nested-schema.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/multi-delimiter.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/dropbox-policy.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/1pigdata_ip/data-bag.txt /user/hduser/pigdata
+hadoop fs -copyFromLocal /home/hduser/pigdata/testdata.txt /user/hduser/pigdata
+
+
+hadoop fs -ls /user/hduser/pigdata
+raw = LOAD '/user/hduser/pigdata/testdata.txt' USING PigStorage('\t');
+STORE raw INTO '/home/hduser/pigdata/rawoutput';
+
+Example1:
+
+A = LOAD 'pigdata/tuple.txt' using PigStorage(' ') AS (a:tuple(a1:int,a2:int,a3:int),b:tuple(b1:int,b2:int,b3:int));
+((3,8,9),(4,5,6))
+((1,4,7),(3,7,5))
+((2,5,8),(9,5,8))
+x = FOREACH A GENERATE a.a1,b.$2
+hadoop fs -copyFromLocal /home/hduser/pigdata/bag.txt /user/hduser/pigdata
+(3,6)
+(1,5)
+(2,8)
+
+Example2:
+
+B = LOAD 'pigdata/bag.txt' USING PigStorage('\t') AS (node:chararray, ip:chararray);
+(NAMENODE,addressvalue: 192.168.1.2)
+(DATANODE,addressvalue: 192.168.1.3)
+(DATANODE,addressvalue: 192.168.1.4)
+(DATANODE,addressvalue: 192.168.1.5)
+(DATANODE,addressvalue: 192.168.1.7)
+(EDGENODE,addressvalue: 192.168.1.9)
+filterB = FILTER B BY node == 'DATANODE';
+filterB1 = FOREACH filterB GENERATE node,ip;
+//get the record count through countB1
+groupB1 = GROUP filterB1 ALL ;
+countB1 = FOREACH groupB1 GENERATE COUNT(filterB1);
+//toeknize only only one column ip
+filterB = FILTER B BY node == 'DATANODE';
+filterB2 = FOREACH filterB GENERATE ip;
+tokenB2 = FOREACH filterB2 GENERATE TOKENIZE(ip);
+({(addressvalue:),(192.168.1.3)})
+({(addressvalue:),(192.168.1.4)})
+({(addressvalue:),(192.168.1.5)})
+({(addressvalue:),(192.168.1.7)})
+
+filterB1 = FOREACH filterB GENERATE node,ip;
+tokenB = FOREACH filterB2 GENERATE TOKENIZE(ip);
+
+// to load as single line, but you should use text loader
+B = LOAD 'pigdata/bag.txt' USING PigStorage('~,~') AS (node:chararray);
+(NAMENODE	addressvalue: 192.168.1.2)
+(DATANODE	addressvalue: 192.168.1.3)
+(DATANODE	addressvalue: 192.168.1.4)
+(DATANODE	addressvalue: 192.168.1.5)
+(DATANODE	addressvalue: 192.168.1.7)
+(EDGENODE	addressvalue: 192.168.1.9)
+
+//since tab delimited NAMENODE addressvalue is not properly tokenized.
+tokenB = FOREACH B GENERATE TOKENIZE(node);
+({(NAMENODE	addressvalue:),(192.168.1.2)})
+({(DATANODE	addressvalue:),(192.168.1.3)})
+({(DATANODE	addressvalue:),(192.168.1.4)})
+({(DATANODE	addressvalue:),(192.168.1.5)})
+({(DATANODE	addressvalue:),(192.168.1.7)})
+({(EDGENODE	addressvalue:),(192.168.1.9)})
+
+Example3:
+
+data = LOAD '/user/hduser/pigdata/map.txt' USING PigStorage(',') AS (name:chararray, age:int);
+B = FOREACH data GENERATE TOMAP(name,age) AS m;
+dump B;
+([John#27])
+([Aravindh#30])
+([Bala#22])
+([Srini#32])
+
+Example4:
+
+bagA = LOAD '/user/hduser/pigdata/bag.txt' AS (c1:chararray,c2:chararray);
+
+(NAMENODE,addressvalue: 192.168.1.2)
+(DATANODE,addressvalue: 192.168.1.3)
+(DATANODE,addressvalue: 192.168.1.4)
+(DATANODE,addressvalue: 192.168.1.5)
+(DATANODE,addressvalue: 192.168.1.7)
+(EDGENODE,addressvalue: 192.168.1.9)
+
+subsetBagA = FOREACH bagA GENERATE $1;
+subsetBagA = FOREACH bagA GENERATE c1;
+
+filterBagA = FILTER bagA BY $0 == 'NAMENODE' or $0 == 'DATANODE';
+
+Example5:usecase trending.
+
+// space delimited
+lineA = LOAD '/user/hduser/pigdata/coursedetails.txt' AS (line:chararray);
+(informatica hadoop datastage sql oracle bigdata SAP)
+(teradata bigdata hadoop java .net SAP hadoop datascience)
+(hadoop datascience bigdata java SAP sql plsql hadoop)
+(java hadoop datascience hadoop bigdata .net)
+
+wordA = FOREACH lineA GENERATE TOKENIZE(line) as word;
+({(informatica),(hadoop),(datastage),(sql),(oracle),(bigdata),(SAP)})
+({(teradata),(bigdata),(hadoop),(java),(.net),(SAP),(hadoop),(datascience)})
+({(hadoop),(datascience),(bigdata),(java),(SAP),(sql),(plsql),(hadoop)})
+({(java),(hadoop),(datascience),(hadoop),(bigdata),(.net)})
+
+wordB = FOREACH lineA GENERATE FLATTEN(TOKENIZE(line)) as word;
+(informatica)
+(hadoop)
+(datastage)
+(sql)
+(oracle)
+(bigdata)
+(SAP)
+(teradata)
+(bigdata)
+(hadoop)
+(java)
+(.net)
+(SAP)
+(hadoop)
+(datascience)
+(hadoop)
+(datascience)
+(bigdata)
+(java)
+(SAP)
+(sql)
+(plsql)
+(hadoop)
+(java)
+(hadoop)
+(datascience)
+(hadoop)
+(bigdata)
+(.net)
+
+distval = distinct wordB;
+
+groupWordB = GROUP wordB BY word;
+(SAP,{(SAP),(SAP),(SAP)})
+(sql,{(sql),(sql)})
+(.net,{(.net),(.net)})
+(java,{(java),(java),(java)})
+(plsql,{(plsql)})
+(hadoop,{(hadoop),(hadoop),(hadoop),(hadoop),(hadoop),(hadoop),(hadoop)})
+(oracle,{(oracle)})
+(bigdata,{(bigdata),(bigdata),(bigdata),(bigdata)})
+(teradata,{(teradata)})
+(datastage,{(datastage)})
+(datascience,{(datascience),(datascience),(datascience)})
+(informatica,{(informatica)})
+
+
+wordcountA = FOREACH groupWordB GENERATE $0,COUNT(wordB) AS Count;
+wordcountA = FOREACH groupWordB GENERATE group,COUNT(wordB) AS Count;
+(SAP,3)
+(sql,2)
+(.net,2)
+(java,3)
+(plsql,1)
+(hadoop,7)
+(oracle,1)
+(bigdata,4)
+(teradata,1)
+(datastage,1)
+(datascience,3)
+(informatica,1)
+
+orderedout = order wordcountA by $1 desc;
+
+Exampl6:
+
+cust = LOAD '/user/hduser/pigdata/custs' using PigStorage(',') AS (
+custid:chararray,firstname:chararray, lastname:chararray, age:long, profession:chararray);
+
+lmt = LIMIT cust 100;
+(4000093,Curtis,Love,45,Secretary)
+(4000094,Dana,McLean,61,Artist)
+(4000095,Jennifer,Christian,54,Human resources assistant)
+(4000096,Brett,Lamb,39,Engineering technician)
+(4000097,Brandon,James,29,Musician)
+(4000098,Keith,Chandler,25,Coach)
+(4000099,Joann,Stout,32,Real estate agent)
+(4000100,Ronnie,Cowan,71,Photographer)
+
+groupbyprofession = GROUP cust BY profession;
+
+(Agricultural and food scientist,{(4006883,Tina,Starr,48,Agricultural and food scientist),(4008439,Ellen,Kessler,52,Agricultural and food scientist),(4009177,Rose,Cole,64,Agricultural and food scientist),(4008836,Molly,Lu,53,Agricultural and food scientist),
+(4004598,Toni,Whitley,36,Agricultural and food scientist)})
+
+countbyprofession = FOREACH groupbyprofession GENERATE group, COUNT (cust);
+(Computer support specialist,222)
+(Recreation and fitness worker,210)
+(Agricultural and food scientist,195)
+
+
+Example 7:
+
+txn = LOAD '/user/hduser/pigdata/txns' using PigStorage(',') AS ( txnid:chararray, date:chararray,custid:chararray, amount:double, category:chararray, product:chararray,city:chararray, state:chararray, type:chararray);
+
+(00095902,01-03-2011,4009230,32.84,Team Sports,Hockey,Everett,Washington,credit)
+(00095903,09-05-2011,4005514,52.82,Jumping,Pogo Sticks,Scottsdale,Arizona,credit)
+
+txnbycust = group txn by custid;
+(4000000,{(00019757,10-30-2011,4000000,19.96,Outdoor Recreation,Running,St. Petersburg,Florida,cash),(00049461,07-12-2011,4000000,188.13,Winter Sports,Cross-Country Skiing,El Paso,Texas,credit)})
+
+spendbycust = foreach txnbycust generate group, SUM(txn.amount);
+(4009996,1538.5499999999997)
+(4009997,692.0999999999999)
+(4009998,924.87)
+(4009999,1265.6399999999999)
+
+custorder = order spendbycust by $1 desc;
+custorderleast = order spendbycust by $1;
+
+//Select only top 100 customers
+top100buyers = limit custorder 100;
+least100buyers = limit custorderleast 100;
+
+//Join the transactions with customer details
+top100buyerstxnsjoin = join top100buyers by $0, cust by $0;
+least100buyerstxnsjoin = join least100buyers by $0, cust by $0;
+
+//Select the required fields from the join for final output
+top100buyerstxnscolumns = foreach top100buyerstxnsjoin generate $0, $3, $4, $5, $6, $1;
+least100buyerstxnscolumns = foreach least100buyerstxnsjoin generate $0, $3, $4, $5, $6, $1;
+
+//Order the customer based on the highest spender.
+realtop100 = order top100buyerstxnscolumns by $5 desc;
+realbottom100 = order least100buyerstxnscolumns by $5;
+
+//Dump the final output
+dump realtop100;
+dump realbottom100;
+
+//STREAMING - use linux command to stream and cut only the first name and last name.
+C = STREAM realtop100 THROUGH `cut -f 2-3`;
+DUMP C;
+
+//UNION
+top10 = limit realtop100 10;
+bottom10 = limit realbottom100 10;
+union20 = UNION top10, bottom10;
+dump union20;
+
+
+Example 8:
+
+hadoop fs -cat /user/hduser/pigdata/weblogs_parse.txt
+
+682.80.31.651	03/Jun/2012:08:35:02 -0500	03	Jun	06	2012	08	35	02	-0500	GET	/download	200	0	/download	Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3
+640.603.73.641	03/Jun/2012:08:37:00 -0500	03	Jun	06	2012	08	37	00	-0500	GET	/products	200	0	-	Mozilla/5.0 (Windows; U; Windows NT 6.0; pt-BR; rv:1.9.1.9) Gecko/20100315 Firefox/3.5.9 (.NET CLR 3.5.30729)
+
+weblogs = LOAD '/user/hduser/weblogs/web*' USING PigStorage('\t')
+AS (
+client_ip:chararray,
+full_request_date:chararray,
+day:int,
+month:chararray,
+month_num:int,
+year:int,
+hour:int,
+minute:int,
+second:int,
+timezone:chararray,
+http_verb:chararray,
+uri:chararray,
+http_status_code:chararray,
+bytes_returned:chararray,
+referrer:chararray,
+user_agent:chararray
+);
+
+
+describe weblogs;
+weblogs: {client_ip: chararray,full_request_date: chararray,day: int,month: chararray,month_num: int,year: int,hour: int,minute: int,second: int,timezone: chararray,http_verb: chararray,uri: chararray,http_status_code: chararray,bytes_returned: chararray,referrer: chararray,user_agent: chararray}
+
+Example 9
+
+//find the pig scroipts in below path
+/home/hduser/aa11_pigscripts
+
+vi sample.pig
+a = LOAD '/user/hduser/pigdata/EMP_DATA.txt';
+DUMP data;
+pig -f sample.pig
+
+(arun,22)
+(ram,23)
+(karthi,24)
+
+Example 10
+
+pig -useHCatalog
+
+customer_details = LOAD 'xademo.customer_details' USING org.apache.hive.hcatalog.pig.HCatLoader();
+DESCRIBE customer_details;
+customer_details_phone_number = FOREACH customer_details GENERATE phone_number;
+DUMP customer_details_phone_number;
+
+hiveData = LOAD 'retail.txnrecords' USING org.apache.hive.hcatalog.pig.HCatLoader();
+
+Example 11:
+
+
+00095897,05-07-2011,4005819,185.54,Indoor Games,Air Hockey,Durham,North Carolina,credit
+00095898,03-07-2011,4007288,141.67,Team Sports,Team Handball,Pasadena,California,credit
+00095899,03-09-2011,4001481,076.01,Water Sports,Life Jackets,New York,New York,credit
+00095900,04-14-2011,4007608,033.94,Exercise & Fitness,Cardio Machine Accessories,Denver  ,Colorado,credit
+00095901,01-02-2011,4007334,138.36,Outdoor Play Equipment,Outdoor Playsets,Huntsville,Alabama,credit
+00095902,01-03-2011,4009230,032.84,Team Sports,Hockey,Everett,Washington,credit
+00095903,09-05-2011,4005514,052.82,Jumping,Pogo Sticks,Scottsdale,Arizona,credit
+
+HIVE>describe formatted txnrecords;
+
+CREATE TABLE `txn2`(
+  `txnno` int, 
+  `txndate` string, 
+  `custno` int, 
+  `amount` double, 
+  `category` string, 
+  `product` string, 
+  `city` string, 
+  `state` string, 
+  `spendby` string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ':'
+LINES TERMINATED BY '\n'
+STORED AS TEXT;
+
+hive> INSERT INTO TABLE txn2 SELECT * FROM txn1 where state ='Alabama';
+
+INSERT INTO TABLE txn1 values (100095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (200095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (300095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (400095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (500095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (600095896,'04-18-2011',4007291,100.50,'kumar','Gymnastics Mats','El Paso','Alabama',null);
+INSERT INTO TABLE txn1 values (700095896,'04-18-2011',4007291,100.50,'kuar','Gymnastics Mats','El Paso','Alabama',null);
+
+
+[hduser@Inceptez 1pigdata_ip]$ hadoop fs -cat /user/hive/warehouse/retail.db/txn2/00000*
+
+customer_details_wo_schema = LOAD '/user/hive/warehouse/retail.db/txn2/00000*' USING PigStorage(':');
+x = FOREACH customer_details_wo_schema GENERATE $8;
+customer_details_not_null = FILTER customer_details_wo_schema BY ($8 is null);
+
+f = FILTER customer_details_wo_schema BY ($8 == '\N');
+DUMP customer_details_not_null;
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+######################################flume###############################################
+##########################################################################################
+
+$FLUME_HOME is /usr/local/flume
+
+task 1
+//soucre sink hdfs
+cat /usr/local/flume/conf/tail_exec.conf
+cd /usr/local/flume/conf
+//terminal 1
+flume-ng agent -n a1 -c conf -f $FLUME_HOME/conf/tail_exec.conf
+//terminal 2
+mkdir /home/hduser/device1
+echo 'test data 1 kumar' >> ~/device1/log.txt
+echo 'test data 2 kumar' >> ~/device1/log.txt
+echo 'test data 3 kumar' >> ~/device1/log.txt
+echo 'test data 4 kumar' >> ~/device1/log.txt
+//check the o/p in
+hadoop fs -cat /flume/tail_output/FlumeData.1492882450934
+
+task 2
+//soucre sink hdfs
+cat /usr/local/flume/conf/hdfs.conf
+cd /usr/local/flume/conf
+Terminal -1
+flume-ng agent -n a1 -c conf -f $FLUME_HOME/conf/hdfs.conf
+Terminal -2
+curl telnet://localhost:44444
+
+
+
+==========================practice==================================================
+
+[hduser@Inceptez ~]$ sqoop import --connect jdbc:mysql://localhost/test --username root --password root --table customer --m 2 --split-by custid --where "city='chennai'" --target-dir kumar_import --lines-terminated-by '\n' --fields-terminated-by ',' ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
